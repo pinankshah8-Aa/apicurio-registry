@@ -827,12 +827,7 @@ public class GroupsResourceImpl extends AbstractResourceImpl implements GroupsRe
     public void createGroupRule(String groupId, CreateRule data) {
         ParameterValidationUtils.requireParameter("body", data);
         ParameterValidationUtils.requireParameter("groupId", groupId);
-        ParameterValidationUtils.requireParameter("ruleType", data.getRuleType());
-        ParameterValidationUtils.requireParameter("config", data.getConfig());
-
-        if (data.getConfig() == null || data.getConfig().trim().isEmpty()) {
-            throw new MissingRequiredParameterException("config");
-        }
+        ParameterValidationUtils.validateRuleConfiguration(data.getRuleType(), data.getConfig());
 
         if (new GroupId(groupId).isDefaultGroup()) {
             throw new NotAllowedException("Default group is not allowed");
@@ -855,12 +850,7 @@ public class GroupsResourceImpl extends AbstractResourceImpl implements GroupsRe
     public Rule updateGroupRuleConfig(String groupId, RuleType ruleType, Rule data) {
         ParameterValidationUtils.requireParameter("body", data);
         ParameterValidationUtils.requireParameter("groupId", groupId);
-        ParameterValidationUtils.requireParameter("ruleType", ruleType);
-        ParameterValidationUtils.requireParameter("config", data.getConfig());
-
-        if (data.getConfig() == null || data.getConfig().trim().isEmpty()) {
-            throw new MissingRequiredParameterException("config");
-        }
+        ParameterValidationUtils.validateRuleConfiguration(ruleType, data.getConfig());
 
         RuleConfigurationDto dto = new RuleConfigurationDto(data.getConfig());
         storage.updateGroupRule(new GroupId(groupId).getRawGroupIdWithNull(), ruleType, dto);
@@ -928,12 +918,7 @@ public class GroupsResourceImpl extends AbstractResourceImpl implements GroupsRe
         ParameterValidationUtils.requireParameter("body", data);
         ParameterValidationUtils.requireParameter("groupId", groupId);
         ParameterValidationUtils.requireParameter("artifactId", artifactId);
-        ParameterValidationUtils.requireParameter("ruleType", data.getRuleType());
-        ParameterValidationUtils.requireParameter("config", data.getConfig());
-
-        if (data.getConfig() == null || data.getConfig().trim().isEmpty()) {
-            throw new MissingRequiredParameterException("config");
-        }
+        ParameterValidationUtils.validateRuleConfiguration(data.getRuleType(), data.getConfig());
 
         RuleConfigurationDto config = new RuleConfigurationDto();
         config.setConfiguration(data.getConfig());
@@ -993,12 +978,7 @@ public class GroupsResourceImpl extends AbstractResourceImpl implements GroupsRe
         ParameterValidationUtils.requireParameter("body", data);
         ParameterValidationUtils.requireParameter("groupId", groupId);
         ParameterValidationUtils.requireParameter("artifactId", artifactId);
-        ParameterValidationUtils.requireParameter("ruleType", ruleType);
-        ParameterValidationUtils.requireParameter("config", data.getConfig());
-
-        if (data.getConfig() == null || data.getConfig().trim().isEmpty()) {
-            throw new MissingRequiredParameterException("config");
-        }
+        ParameterValidationUtils.validateRuleConfiguration(ruleType, data.getConfig());
 
         RuleConfigurationDto dto = new RuleConfigurationDto(data.getConfig());
         storage.updateArtifactRule(new GroupId(groupId).getRawGroupIdWithNull(), artifactId, ruleType, dto);

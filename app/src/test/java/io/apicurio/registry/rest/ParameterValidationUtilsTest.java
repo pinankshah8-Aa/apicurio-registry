@@ -1,18 +1,74 @@
 package io.apicurio.registry.rest;
 
+import io.apicurio.registry.types.RuleType;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Unit tests for the pagination normalization helpers in {@link ParameterValidationUtils}.
- * Covers issue #9369: negative and overflowing offset/limit values must be normalized rather
- * than propagated to the storage layer, and v2's normalizeLimitUnbounded must not apply v3's
- * 1000-row cap.
+ * Unit tests for the shared REST parameter validation helpers.
  */
 class ParameterValidationUtilsTest {
+
+    @Test
+    void validatesRuleConfigurations() {
+        assertDoesNotThrow(() -> ParameterValidationUtils.validateRuleConfiguration(
+                RuleType.VALIDITY, "FULL"));
+        assertDoesNotThrow(() -> ParameterValidationUtils.validateRuleConfiguration(
+                RuleType.COMPATIBILITY, "BACKWARD_TRANSITIVE"));
+        assertDoesNotThrow(() -> ParameterValidationUtils.validateRuleConfiguration(
+                RuleType.INTEGRITY, "REFS_EXIST, NO_DUPLICATES"));
+    }
+
+    @Test
+    void rejectsUnknownRuleConfigurations() {
+        for (RuleType ruleType : RuleType.values()) {
+            assertThrows(InvalidParameterValueException.class,
+                    () -> ParameterValidationUtils.validateRuleConfiguration(ruleType, "UNKNOWN"));
+        }
+    }
+
+    @Test
+    void reportsAcceptedRuleConfigurations() {
+        InvalidParameterValueException validityError = assertThrows(InvalidParameterValueException.class,
+                () -> ParameterValidationUtils.validateRuleConfiguration(
+                        RuleType.VALIDITY, "UNKNOWN"));
+        assertTrue(validityError.getMessage().contains("[NONE, SYNTAX_ONLY, FULL]"));
+
+        InvalidParameterValueException integrityError = assertThrows(InvalidParameterValueException.class,
+                () -> ParameterValidationUtils.validateRuleConfiguration(
+                        RuleType.INTEGRITY, "UNKNOWN"));
+        assertTrue(integrityError.getMessage().contains("one or more comma-separated values"));
+        assertTrue(integrityError.getMessage().contains("NO_CIRCULAR_REFERENCES"));
+    }
+
+    @Test
+    void rejectsMalformedIntegrityConfiguration() {
+        assertThrows(InvalidParameterValueException.class,
+                () -> ParameterValidationUtils.validateRuleConfiguration(
+                        RuleType.INTEGRITY, "REFS_EXIST,,NO_DUPLICATES"));
+    }
+
+    @Test
+    void preservesStrictValidityConfigurationSemantics() {
+        assertThrows(InvalidParameterValueException.class,
+                () -> ParameterValidationUtils.validateRuleConfiguration(RuleType.VALIDITY, " FULL "));
+    }
+
+    @Test
+    void rejectsMissingRuleConfiguration() {
+        assertThrows(MissingRequiredParameterException.class,
+                () -> ParameterValidationUtils.validateRuleConfiguration(null, "FULL"));
+        assertThrows(MissingRequiredParameterException.class,
+                () -> ParameterValidationUtils.validateRuleConfiguration(RuleType.VALIDITY, null));
+        assertThrows(MissingRequiredParameterException.class,
+                () -> ParameterValidationUtils.validateRuleConfiguration(RuleType.VALIDITY, "  "));
+    }
 
     @Test
     void normalizeOffsetClampsNegativeToZero() {

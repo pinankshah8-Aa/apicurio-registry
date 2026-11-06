@@ -1,6 +1,12 @@
 package io.apicurio.registry.rest;
 
+import io.apicurio.registry.rules.compatibility.CompatibilityLevel;
+import io.apicurio.registry.rules.integrity.IntegrityLevel;
+import io.apicurio.registry.rules.validity.ValidityLevel;
+import io.apicurio.registry.types.RuleType;
+
 import java.math.BigInteger;
+import java.util.Arrays;
 
 /**
  * Utility class providing common parameter validation methods for REST API resources.
@@ -56,6 +62,45 @@ public final class ParameterValidationUtils {
         if (actualValue != null && expectedValue != null && !actualValue.equals(expectedValue)) {
             throw new InvalidParameterValueException(parameterName, expectedValue, actualValue);
         }
+    }
+
+    /**
+     * Validates a rule configuration using the same accepted values as the corresponding rule executor.
+     *
+     * @param ruleType the type of rule being configured
+     * @param config the rule configuration to validate
+     * @throws MissingRequiredParameterException if the rule type or configuration is missing
+     * @throws InvalidParameterValueException if the configuration is not valid for the rule type
+     */
+    public static void validateRuleConfiguration(RuleType ruleType, String config) {
+        requireParameter("ruleType", ruleType);
+        if (config == null || config.trim().isEmpty()) {
+            throw new MissingRequiredParameterException("config");
+        }
+
+        try {
+            switch (ruleType) {
+                case VALIDITY -> ValidityLevel.valueOf(config);
+                case COMPATIBILITY -> CompatibilityLevel.valueOf(config);
+                case INTEGRITY -> {
+                    for (String level : config.split(",", -1)) {
+                        IntegrityLevel.valueOf(level.trim());
+                    }
+                }
+            }
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidParameterValueException("config",
+                    expectedRuleConfiguration(ruleType), config);
+        }
+    }
+
+    private static String expectedRuleConfiguration(RuleType ruleType) {
+        return switch (ruleType) {
+            case VALIDITY -> Arrays.toString(ValidityLevel.values());
+            case COMPATIBILITY -> Arrays.toString(CompatibilityLevel.values());
+            case INTEGRITY -> "one or more comma-separated values from "
+                    + Arrays.toString(IntegrityLevel.values());
+        };
     }
 
     /**

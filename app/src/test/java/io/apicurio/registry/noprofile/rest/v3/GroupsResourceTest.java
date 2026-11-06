@@ -150,6 +150,16 @@ public class GroupsResourceTest extends AbstractResourceTestBase {
                 .pathParam("artifactId", "testCreateArtifactRule/EmptyAPI/1").body(emptyConfig)
                 .post("/registry/v3/groups/{groupId}/artifacts/{artifactId}/rules").then().statusCode(400);
 
+        // Test an unknown configuration for the selected rule type.
+        CreateRule invalidConfig = new CreateRule();
+        invalidConfig.setRuleType(RuleType.VALIDITY);
+        invalidConfig.setConfig("NOT_A_VALIDITY_LEVEL");
+        given().when().contentType(CT_JSON).pathParam("groupId", "testCreateArtifactRule")
+                .pathParam("artifactId", "testCreateArtifactRule/EmptyAPI/1").body(invalidConfig)
+                .post("/registry/v3/groups/{groupId}/artifacts/{artifactId}/rules").then().statusCode(400)
+                .body("name", equalTo("InvalidParameterValueException"))
+                .body("detail", containsString("[NONE, SYNTAX_ONLY, FULL]"));
+
     }
 
     @Test

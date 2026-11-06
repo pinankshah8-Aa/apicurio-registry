@@ -19,7 +19,6 @@ import io.apicurio.registry.metrics.health.liveness.ResponseErrorLivenessCheck;
 import io.apicurio.registry.metrics.health.readiness.ResponseTimeoutReadinessCheck;
 import io.apicurio.registry.rest.ConflictException;
 import io.apicurio.registry.rest.MethodMetadata;
-import io.apicurio.registry.rest.MissingRequiredParameterException;
 import io.apicurio.registry.rest.ParameterValidationUtils;
 import io.apicurio.registry.rest.v3.AdminResource;
 import io.apicurio.registry.rest.v3.beans.ActiveConsumer;
@@ -242,11 +241,7 @@ public class AdminResourceImpl implements AdminResource {
     @Authorized(style = AuthorizedStyle.None, level = AuthorizedLevel.Admin)
     public void createGlobalRule(CreateRule data) {
         RuleType ruleType = data.getRuleType();
-        ParameterValidationUtils.requireParameter("ruleType", ruleType);
-
-        if (data.getConfig() == null || data.getConfig().trim().isEmpty()) {
-            throw new MissingRequiredParameterException("config");
-        }
+        ParameterValidationUtils.validateRuleConfiguration(ruleType, data.getConfig());
 
         RuleConfigurationDto configDto = new RuleConfigurationDto();
         configDto.setConfiguration(data.getConfig());
@@ -294,9 +289,7 @@ public class AdminResourceImpl implements AdminResource {
     @Audited
     @Authorized(style = AuthorizedStyle.None, level = AuthorizedLevel.Admin)
     public Rule updateGlobalRuleConfig(RuleType ruleType, Rule data) {
-        if (data.getConfig() == null || data.getConfig().trim().isEmpty()) {
-            throw new MissingRequiredParameterException("config");
-        }
+        ParameterValidationUtils.validateRuleConfiguration(ruleType, data.getConfig());
 
         RuleConfigurationDto configDto = new RuleConfigurationDto();
         configDto.setConfiguration(data.getConfig());
